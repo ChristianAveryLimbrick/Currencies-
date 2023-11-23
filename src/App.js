@@ -60,14 +60,15 @@ function App() {
           handleToCurrencyChange={handleToCurrencyChange}
           handleFlip={handleFlip}
         />
-        <ConvertButton className="bg-blue-500 text-white px-4 py-2 rounded-md mb-4" />
         <Input
           handleAmountChange={handleAmountChange}
           amount={amount}
           handleClear={handleClear}
         />
+        <ConvertButton/>
 
-        <Result className="text-2xl font-bold" />
+
+        <Footer />
       </div>
     </div>
   );
@@ -83,12 +84,12 @@ const Header = () => {
 
 const Input = ({ handleAmountChange, amount, handleClear }) => {
   return (
-    <div className="flex justify-center mb-4 mt-4">
-      <div className="flex items-center">
+    <div className="flex justify-center mb-4 mt-4 rounded-full">
+      <div className="flex items-center rounded-full">
         <input
           type="text"
           placeholder="Enter Amount"
-          className="border border-gray-300  px-2 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-300 ml-12 text-center"
+          className="border border-gray-300  px-2 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-300 ml-12 text-center "
           onChange={handleAmountChange}
           value={amount}
         />
@@ -164,6 +165,14 @@ const ToCurrency = ({ currencyList, onChange, className, value }) => {
   );
 };
 
+const Flipper = () => {
+  return (
+    <div>
+      <HiOutlineSwitchHorizontal className="text-2xl text-blue-500 cursor-pointer mx-4" />
+    </div>
+  );
+};
+
 const ExchangeLogo = () => {
   return (
     <svg
@@ -183,34 +192,33 @@ const ExchangeLogo = () => {
   );
 };
 
-const ConvertButton = ({ className }) => {
-  <button
-    className={`${className} text-white font-medium px-6 py-3 rounded-lg shadow hover:bg-blue-600`}
-  ></button>;
+const ConvertButton = ({fromCurrency, toCurrency, amount, result}) => {
+  return (
+    <button
+      className="bg-blue-500 text-white w-64 px-2 py-2 mt-2 rounded-md shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
+    >
+      Convert
+    </button>
+  );
 };
 
-const Result = ({ children }) => {
+const Result = ({fromCurrency, toCurrency, amount, result, setResult }) => {
   return (
-    <div className="text-3xl font-bold text-gray-800 text-center my-6">
-      {children}
+    <div >
+      
+      
     </div>
   );
 };
 
-const Flipper = () => {
-  return (
-    <div>
-      <HiOutlineSwitchHorizontal className="text-2xl text-blue-500 cursor-pointer mx-4" />
-    </div>
-  );
-};
+
 
 const Footer = () => {
   return (
-    <div className="text-center text-white text-sm mt-10 p-4 bg-gray-800">
+    <div className="fixed inset-x-0 bottom-0 bg-gray-800 text-white text-center text-sm p-4">
       Created by Christian Limbrick
     </div>
-  );
-};
+  )
+}
 
 export default App;
