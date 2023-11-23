@@ -14,7 +14,58 @@ function App() {
   const [flip, setFlip] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const currencyList = ["USD", "EUR", "GBP", "CAD", "JPY", "MXN", "COP"];
+  const currencyList = ["USD", "EUR", "GBP", "CAD", "JPY", "MXN", "COP", "BRL"];
+
+  const currencySymbols = {
+    USD: "$",
+    EUR: "€",
+    GBP: "£",
+    CAD: "C$",
+    JPY: "¥",
+    MXN: "Mex$",
+    COP: "Col$",
+    BRL: "R$",
+
+  }
+
+  const currencyNames = {
+    USD: "US Dollar",
+    EUR: "Euro",
+    GBP: "British Pound",
+    CAD: "Canadian Dollar",
+    JPY: "Japanese Yen",
+    MXN: "Mexican Peso",
+    COP: "Colombian Peso",
+    BRL: "Brazilian Real",
+  }
+
+  const countryFlagEmojis = {
+    USD: "🇺🇸",
+    EUR: "🇪🇺",
+    GBP: "🇬🇧",
+    CAD: "🇨🇦",
+    JPY: "🇯🇵",
+    MXN: "🇲🇽",
+    COP: "🇨🇴",
+    BRL: "🇧🇷",
+  
+  }
+
+  const combinedCurrencyData = currencyList.map(currencyCode => {
+    return {
+      code: currencyCode,
+      symbol: currencySymbols[currencyCode],
+      name: currencyNames[currencyCode],
+      flag: countryFlagEmojis[currencyCode]
+      
+
+    };
+
+  });
+
+  console.log(combinedCurrencyData);
+
+
 
   const handleFromCurrencyChange = (event) => {
     console.log("From currency changed to:", event.target.value);
@@ -29,9 +80,27 @@ function App() {
   };
 
   const handleAmountChange = (event) => {
-    setAmount(event.target.value);
+    // Get the input value and remove all non-numeric characters except for the decimal point
+    let input = event.target.value.replace(/[^0-9.]/g, '');
+  
+    // Avoid multiple decimal points
+    const decimalPoints = input.match(/\./g) || [];
+    if (decimalPoints.length > 1) {
+      input = input.slice(0, input.lastIndexOf('.'));
+    }
+  
+    // Split the input into whole and decimal parts
+    const parts = input.split('.');
+    const wholePart = parts[0];
+    const decimalPart = parts.length > 1 ? '.' + parts[1] : '';
+  
+    // Add commas to the whole part of the number
+    const formattedWholePart = wholePart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  
+    // Combine the whole part with the decimal part
+    setAmount(formattedWholePart + decimalPart);
   };
-
+  
   const handleFlip = () => {
     const currentFromCurrency = fromCurrency;
     const currentToCurrency = toCurrency;
@@ -41,6 +110,7 @@ function App() {
 
     console.log("Flip");
   };
+
 
   const handleClear = () => {
     setAmount("");
@@ -92,7 +162,9 @@ const Input = ({ handleAmountChange, amount, handleClear }) => {
           className="border border-gray-300  px-2 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-300 ml-12 text-center "
           onChange={handleAmountChange}
           value={amount}
-        />
+        >
+
+        </input>
         <button className=" px-4 py-2 hover:font-bold" onClick={handleClear}>
           <MdOutlineDeleteOutline className=" hover:text-gray-800" />
         </button>
