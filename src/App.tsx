@@ -6,17 +6,43 @@ import { HiArrowDown } from "react-icons/hi2";
 import { HiOutlineSwitchHorizontal } from "react-icons/hi";
 import { MdOutlineDeleteOutline } from "react-icons/md";
 
+type CurrencyCode =
+  | "USD"
+  | "EUR"
+  | "GBP"
+  | "CAD"
+  | "JPY"
+  | "MXN"
+  | "COP"
+  | "BRL";
+
+type CurrencyData = {
+  code: string;
+  symbol: string;
+  name: string;
+  flag: string;
+};
+
 function App() {
-  const [fromCurrency, setFromCurrency] = useState("USD");
-  const [toCurrency, setToCurrency] = useState("EUR");
-  const [amount, setAmount] = useState("");
-  const [result, setResult] = useState(0);
-  const [flip, setFlip] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [fromCurrency, setFromCurrency] = useState<CurrencyCode>("USD");
+  const [toCurrency, setToCurrency] = useState<CurrencyCode>("EUR");
+  const [amount, setAmount] = useState<string>("");
+  const [result, setResult] = useState<number>(0);
+  const [flip, setFlip] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const currencyList = ["USD", "EUR", "GBP", "CAD", "JPY", "MXN", "COP", "BRL"];
+  const currencyList: CurrencyCode[] = [
+    "USD",
+    "EUR",
+    "GBP",
+    "CAD",
+    "JPY",
+    "MXN",
+    "COP",
+    "BRL",
+  ];
 
-  const currencySymbols = {
+  const currencySymbols: Record<CurrencyCode, string> = {
     USD: "$",
     EUR: "€",
     GBP: "£",
@@ -25,10 +51,9 @@ function App() {
     MXN: "Mex$",
     COP: "Col$",
     BRL: "R$",
+  };
 
-  }
-
-  const currencyNames = {
+  const currencyNames: Record<CurrencyCode, string> = {
     USD: "US Dollar",
     EUR: "Euro",
     GBP: "British Pound",
@@ -37,9 +62,9 @@ function App() {
     MXN: "Mexican Peso",
     COP: "Colombian Peso",
     BRL: "Brazilian Real",
-  }
+  };
 
-  const countryFlagEmojis = {
+  const countryFlagEmojis: Record<CurrencyCode, string> = {
     USD: "🇺🇸",
     EUR: "🇪🇺",
     GBP: "🇬🇧",
@@ -48,59 +73,59 @@ function App() {
     MXN: "🇲🇽",
     COP: "🇨🇴",
     BRL: "🇧🇷",
-  
-  }
+  };
 
-  const combinedCurrencyData = currencyList.map(currencyCode => {
-    return {
-      code: currencyCode,
-      symbol: currencySymbols[currencyCode],
-      name: currencyNames[currencyCode],
-      flag: countryFlagEmojis[currencyCode]
-      
-
-    };
-
-  });
+  const combinedCurrencyData: CurrencyData[] = currencyList.map(
+    (currencyCode) => {
+      return {
+        code: currencyCode,
+        symbol: currencySymbols[currencyCode],
+        name: currencyNames[currencyCode],
+        flag: countryFlagEmojis[currencyCode],
+      };
+    }
+  );
 
   console.log(combinedCurrencyData);
 
-
-
-  const handleFromCurrencyChange = (event) => {
+  const handleFromCurrencyChange = (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
     console.log("From currency changed to:", event.target.value);
 
-    setFromCurrency(event.target.value);
+    setFromCurrency(event.target.value as CurrencyCode);
   };
 
-  const handleToCurrencyChange = (event) => {
+  const handleToCurrencyChange = (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
     console.log("To currency changed to:", event.target.value);
 
-    setToCurrency(event.target.value);
+    setToCurrency(event.target.value as CurrencyCode);
   };
 
-  const handleAmountChange = (event) => {
+  const handleAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     // Get the input value and remove all non-numeric characters except for the decimal point
-    let input = event.target.value.replace(/[^0-9.]/g, '');
-  
+    let input = event.target.value.replace(/[^0-9.]/g, "");
+
     // Avoid multiple decimal points
     const decimalPoints = input.match(/\./g) || [];
     if (decimalPoints.length > 1) {
-      input = input.slice(0, input.lastIndexOf('.'));
+      input = input.slice(0, input.lastIndexOf("."));
     }
-  
+
     // Split the input into whole and decimal parts
-    const parts = input.split('.');
+    const parts = input.split(".");
     const wholePart = parts[0];
-    const decimalPart = parts.length > 1 ? '.' + parts[1] : '';
-  
+    const decimalPart = parts.length > 1 ? "." + parts[1] : "";
+
     // Add commas to the whole part of the number
     const formattedWholePart = wholePart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  
+
     // Combine the whole part with the decimal part
     setAmount(formattedWholePart + decimalPart);
   };
-  
+
   const handleFlip = () => {
     const currentFromCurrency = fromCurrency;
     const currentToCurrency = toCurrency;
@@ -110,7 +135,6 @@ function App() {
 
     console.log("Flip");
   };
-
 
   const handleClear = () => {
     setAmount("");
@@ -129,14 +153,14 @@ function App() {
           handleFromCurrencyChange={handleFromCurrencyChange}
           handleToCurrencyChange={handleToCurrencyChange}
           handleFlip={handleFlip}
+          combinedCurrencyData={combinedCurrencyData}
         />
         <Input
           handleAmountChange={handleAmountChange}
           amount={amount}
           handleClear={handleClear}
         />
-        <ConvertButton/>
-
+        <ConvertButton />
 
         <Footer />
       </div>
@@ -152,7 +176,13 @@ const Header = () => {
   );
 };
 
-const Input = ({ handleAmountChange, amount, handleClear }) => {
+type InputProps = {
+  handleAmountChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  amount: string;
+  handleClear: () => void;
+};
+
+const Input = ({ handleAmountChange, amount, handleClear }: InputProps) => {
   return (
     <div className="flex justify-center mb-4 mt-4 rounded-full">
       <div className="flex items-center rounded-full">
@@ -162,15 +192,25 @@ const Input = ({ handleAmountChange, amount, handleClear }) => {
           className="border border-gray-300  px-2 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-300 ml-12 text-center "
           onChange={handleAmountChange}
           value={amount}
-        >
-
-        </input>
+        ></input>
         <button className=" px-4 py-2 hover:font-bold" onClick={handleClear}>
           <MdOutlineDeleteOutline className=" hover:text-gray-800" />
         </button>
       </div>
     </div>
   );
+};
+
+type CurrencySelectorProps = {
+  currencyList: CurrencyCode[];
+  fromCurrency: CurrencyCode;
+  toCurrency: CurrencyCode;
+  handleFromCurrencyChange: (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => void;
+  handleToCurrencyChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  handleFlip: () => void;
+  combinedCurrencyData: CurrencyData[];
 };
 
 const CurrencySelector = ({
@@ -180,7 +220,8 @@ const CurrencySelector = ({
   handleFromCurrencyChange,
   handleToCurrencyChange,
   handleFlip,
-}) => {
+  combinedCurrencyData,
+}: CurrencySelectorProps) => {
   return (
     <div className="flex items-center justify-center mb-6">
       <FromCurrency
@@ -188,49 +229,69 @@ const CurrencySelector = ({
         onChange={handleFromCurrencyChange}
         className="mr-2"
         value={fromCurrency}
+        combinedCurrencyData={combinedCurrencyData}
       />
-      <button className = " mb-4" onClick = {handleFlip} >
-      <Flipper  />
-
+      <button className=" mb-4" onClick={handleFlip}>
+        <Flipper />
       </button>
-      
+
       <ToCurrency
         currencyList={currencyList}
         onChange={handleToCurrencyChange}
         className="ml-2"
         value={toCurrency}
-        default = {currencyList[1]}
+        combinedCurrencyData={combinedCurrencyData}        
       />
     </div>
   );
 };
 
-const FromCurrency = ({ currencyList, onChange, className, value }) => {
-  return (
-    <select
-      onChange={onChange}
-      className={`border border-gray-300 rounded-lg shadow-sm px-4 py-3 w-32 focus:outline-none focus:ring-2 focus:ring-blue-300 mb-4 ${className}`}
-      value = {value}
-    >
-      {currencyList.map((currency) => (
-        <option key={currency} value={currency}>
-          {currency}
-        </option>
-      ))}
-    </select>
-  );
+type FromCurrencyProps = {
+  currencyList: CurrencyCode[];
+  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  className: string;
+  value: CurrencyCode;
+  combinedCurrencyData: CurrencyData[];
 };
 
-const ToCurrency = ({ currencyList, onChange, className, value }) => {
+const FromCurrency = ({
+  currencyList,
+  onChange,
+  className,
+  value,
+  combinedCurrencyData,
+}: FromCurrencyProps) => {
   return (
     <select
       onChange={onChange}
       className={`border border-gray-300 rounded-lg shadow-sm px-4 py-3 w-32 focus:outline-none focus:ring-2 focus:ring-blue-300 mb-4 ${className}`}
       value={value}
     >
-      {currencyList.map((currency) => (
-        <option key={currency} value={currency}>
-          {currency}
+      {combinedCurrencyData.map((currency) => (
+        <option key={currency.code} value={currency.code}>
+          {currency.code} {currency.flag}
+        </option>
+      ))}
+    </select>
+  );
+};
+
+const ToCurrency = ({
+  currencyList,
+  onChange,
+  className,
+  value,
+  combinedCurrencyData,
+}) => {
+  return (
+    <select
+      onChange={onChange}
+      className={`border border-gray-300 rounded-lg shadow-sm px-4 py-3 w-32 focus:outline-none focus:ring-2 focus:ring-blue-300 mb-4 ${className}`}
+      value={value}
+    >
+      {combinedCurrencyData.map((currency) => (
+        <option key={currency.code} value={currency.code}>
+          {currency.code} {currency.flag}
         </option>
       ))}
     </select>
@@ -264,33 +325,24 @@ const ExchangeLogo = () => {
   );
 };
 
-const ConvertButton = ({fromCurrency, toCurrency, amount, result}) => {
+const ConvertButton = () => {
   return (
-    <button
-      className="bg-blue-500 text-white w-64 px-2 py-2 mt-2 rounded-md shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
-    >
+    <button className="bg-blue-500 text-white w-64 px-2 py-2 mt-2 rounded-md shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
       Convert
     </button>
   );
 };
 
-const Result = ({fromCurrency, toCurrency, amount, result, setResult }) => {
-  return (
-    <div >
-      
-      
-    </div>
-  );
+const Result = () => {
+  return <div></div>;
 };
-
-
 
 const Footer = () => {
   return (
     <div className="fixed inset-x-0 bottom-0 bg-gray-800 text-white text-center text-sm p-4">
       Created by Christian Limbrick
     </div>
-  )
-}
+  );
+};
 
 export default App;
