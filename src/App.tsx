@@ -5,6 +5,10 @@ import { Dropdown } from "flowbite-react";
 import { HiArrowDown } from "react-icons/hi2";
 import { HiOutlineSwitchHorizontal } from "react-icons/hi";
 import { MdOutlineDeleteOutline } from "react-icons/md";
+import "./api.Service";  
+import { getLatestRates } from './api.Service';
+
+
 
 type CurrencyCode =
   | "USD"
@@ -141,6 +145,44 @@ function App() {
     setResult(0);
   };
 
+
+
+
+
+
+
+  const handleConvert = async () => {
+    setLoading(true);
+    try {
+      const numericAmount = parseFloat(amount.replace(/,/g, ''));
+  
+      if (isNaN(numericAmount)) {
+        throw new Error("Invalid input amount");
+      }
+  
+      const response = await getLatestRates(fromCurrency, toCurrency, numericAmount);
+  
+      if (response.result === 'success' && response.conversion_result !== undefined) {
+        setResult(response.conversion_result);
+      } else {
+        console.error("Invalid API Response:", response);
+        throw new Error(`Conversion Error: Invalid response from API`);
+      }
+    } catch (error) {
+      console.error("Conversion Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
+  
+
+
+
+
+
+
   return (
     <div className="wrapper flex flex-col items-center px-4 py-8">
       <div className="wrapper flex flex-col items-center px-4 py-8">
@@ -155,12 +197,17 @@ function App() {
           handleFlip={handleFlip}
           combinedCurrencyData={combinedCurrencyData}
         />
+      <Result fromCurrency={fromCurrency} toCurrency={toCurrency} amount={amount} result={result} loading={loading} />
+
         <Input
           handleAmountChange={handleAmountChange}
           amount={amount}
           handleClear={handleClear}
         />
-        <ConvertButton />
+        <ConvertButton
+        handleConvert={handleConvert}
+        
+        />
 
         <Footer />
       </div>
@@ -307,6 +354,8 @@ const Flipper = () => {
 };
 
 const ExchangeLogo = () => {
+
+  
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -325,17 +374,43 @@ const ExchangeLogo = () => {
   );
 };
 
-const ConvertButton = () => {
+const ConvertButton = ({handleConvert}) => {
   return (
-    <button className="bg-blue-500 text-white w-64 px-2 py-2 mt-2 rounded-md shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
+    <button className ="bg-blue-500 text-white w-64 px-2 py-2 mt-2 rounded-md shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"       onClick={handleConvert}
+    >
       Convert
     </button>
   );
 };
 
-const Result = () => {
-  return <div></div>;
+type ResultProps = {
+  fromCurrency: string;
+  toCurrency: string;
+  amount: string;
+  result: number;
+  loading: boolean;
 };
+
+const Result = ({ fromCurrency, toCurrency, amount, result, loading }: ResultProps) => {
+  if (loading) {
+    return <div className="text-gray-800 text-center my-4 mb-6">Calculating...</div>;
+  }
+
+  // Check for null or undefined explicitly
+  if (result === null || result === undefined) {
+    return <div className="text-2xl font-semibold text-gray-800 text-center my-4 mb-6">Enter an amount to convert</div>;
+  }
+
+  // Format result to a fixed number of decimal places for better readability
+  const formattedResult = result.toFixed(2);
+
+  return (
+    <div>
+      <div className="text-2xl font-semibold text-gray-800 text-center my-5 mb-6">{amount} {fromCurrency} = {formattedResult} {toCurrency}</div>
+    </div>
+  );
+};
+
 
 const Footer = () => {
   return (
