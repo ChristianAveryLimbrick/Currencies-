@@ -1,14 +1,12 @@
 import React from "react";
 import "./index.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dropdown } from "flowbite-react";
 import { HiArrowDown } from "react-icons/hi2";
 import { HiOutlineSwitchHorizontal } from "react-icons/hi";
 import { MdOutlineDeleteOutline } from "react-icons/md";
-import "./api.Service";  
-import { getLatestRates } from './api.Service';
-
-
+import "./api.Service";
+import { getLatestRates } from "./api.Service";
 
 type CurrencyCode =
   | "USD"
@@ -34,6 +32,7 @@ function App() {
   const [result, setResult] = useState<number>(0);
   const [flip, setFlip] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const [hasConverted, setHasConverted] = useState(false);
 
   const currencyList: CurrencyCode[] = [
     "USD",
@@ -52,9 +51,9 @@ function App() {
     GBP: "£",
     CAD: "C$",
     JPY: "¥",
-    MXN: "Mex$",
-    COP: "Col$",
-    BRL: "R$",
+    MXN: "$",
+    COP: "$",
+    BRL: "$",
   };
 
   const currencyNames: Record<CurrencyCode, string> = {
@@ -95,20 +94,25 @@ function App() {
   const handleFromCurrencyChange = (
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {
-    console.log("From currency changed to:", event.target.value);
-
     setFromCurrency(event.target.value as CurrencyCode);
+    // Reset the input field and hide the result
+    setAmount("");
+    setResult(0);
+    setHasConverted(false);
   };
 
   const handleToCurrencyChange = (
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {
-    console.log("To currency changed to:", event.target.value);
-
     setToCurrency(event.target.value as CurrencyCode);
+    // Reset the input field and hide the result
+    setAmount("");
+    setResult(0);
+    setHasConverted(false);
   };
 
   const handleAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setHasConverted(false);
     // Get the input value and remove all non-numeric characters except for the decimal point
     let input = event.target.value.replace(/[^0-9.]/g, "");
 
@@ -131,57 +135,59 @@ function App() {
   };
 
   const handleFlip = () => {
-    const currentFromCurrency = fromCurrency;
-    const currentToCurrency = toCurrency;
+    // Swap the currencies
+    setFromCurrency(toCurrency);
+    setToCurrency(fromCurrency);
 
-    setFromCurrency(currentToCurrency);
-    setToCurrency(currentFromCurrency);
+    setAmount("");
+    setResult(0);
+    setHasConverted(false);
+  };
 
-    console.log("Flip");
+  const triggerConversion = () => {
+    // Check if there's a valid amount before re-triggering the conversion
+    const numericAmount = parseFloat(amount.replace(/,/g, ""));
+    if (!isNaN(numericAmount) && numericAmount > 0) {
+      handleConvert();
+    }
   };
 
   const handleClear = () => {
     setAmount("");
     setResult(0);
+    setHasConverted(false);
   };
-
-
-
-
-
-
 
   const handleConvert = async () => {
-    setLoading(true);
-    try {
-      const numericAmount = parseFloat(amount.replace(/,/g, ''));
-  
-      if (isNaN(numericAmount)) {
-        throw new Error("Invalid input amount");
+    const numericAmount = parseFloat(amount.replace(/,/g, ""));
+
+    // Only proceed if numericAmount is a valid number and greater than 0
+    if (!isNaN(numericAmount) && numericAmount > 0) {
+      setHasConverted(true);
+      setLoading(true);
+      try {
+        const response = await getLatestRates(
+          fromCurrency,
+          toCurrency,
+          numericAmount
+        );
+
+        if (
+          response.result === "success" &&
+          response.conversion_result !== undefined
+        ) {
+          setResult(response.conversion_result);
+        } else {
+          console.error("Invalid API Response:", response);
+          throw new Error(`Conversion Error: Invalid response from API`);
+        }
+      } catch (error) {
+        console.error("Conversion Error:", error);
+      } finally {
+        setLoading(false);
       }
-  
-      const response = await getLatestRates(fromCurrency, toCurrency, numericAmount);
-  
-      if (response.result === 'success' && response.conversion_result !== undefined) {
-        setResult(response.conversion_result);
-      } else {
-        console.error("Invalid API Response:", response);
-        throw new Error(`Conversion Error: Invalid response from API`);
-      }
-    } catch (error) {
-      console.error("Conversion Error:", error);
-    } finally {
-      setLoading(false);
     }
   };
-  
-  
-  
-
-
-
-
-
 
   return (
     <div className="wrapper flex flex-col items-center px-4 py-8">
@@ -197,17 +203,22 @@ function App() {
           handleFlip={handleFlip}
           combinedCurrencyData={combinedCurrencyData}
         />
-      <Result fromCurrency={fromCurrency} toCurrency={toCurrency} amount={amount} result={result} loading={loading} />
+        <Result
+          fromCurrency={fromCurrency}
+          toCurrency={toCurrency}
+          amount={amount}
+          result={result}
+          loading={loading}
+          hasConverted={hasConverted}
+          currencySymbols={currencySymbols}
+        />
 
         <Input
           handleAmountChange={handleAmountChange}
           amount={amount}
           handleClear={handleClear}
         />
-        <ConvertButton
-        handleConvert={handleConvert}
-        
-        />
+        <ConvertButton handleConvert={handleConvert} />
 
         <Footer />
       </div>
@@ -217,7 +228,7 @@ function App() {
 
 const Header = () => {
   return (
-    <div className="text-4xl font-semibold text-gray-800 text-center my-10 mb-12">
+    <div className="text-5xl font-semibold text-gray-800 text-center my-20 mb-18">
       Currency Converter
     </div>
   );
@@ -287,7 +298,7 @@ const CurrencySelector = ({
         onChange={handleToCurrencyChange}
         className="ml-2"
         value={toCurrency}
-        combinedCurrencyData={combinedCurrencyData}        
+        combinedCurrencyData={combinedCurrencyData}
       />
     </div>
   );
@@ -323,13 +334,21 @@ const FromCurrency = ({
   );
 };
 
+type ToCurrencyProps = {
+  currencyList: CurrencyCode[];
+  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  className: string;
+  value: CurrencyCode; // Assuming value is of type CurrencyCode
+  combinedCurrencyData: CurrencyData[];
+};
+
 const ToCurrency = ({
   currencyList,
   onChange,
   className,
   value,
   combinedCurrencyData,
-}) => {
+}: ToCurrencyProps) => {
   return (
     <select
       onChange={onChange}
@@ -354,8 +373,6 @@ const Flipper = () => {
 };
 
 const ExchangeLogo = () => {
-
-  
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -374,9 +391,16 @@ const ExchangeLogo = () => {
   );
 };
 
-const ConvertButton = ({handleConvert}) => {
+
+type ConvertButtonProps = {
+  handleConvert: () => void; // Adjust the type based on the actual signature of handleConvert
+};
+
+const ConvertButton = ({ handleConvert }: ConvertButtonProps) => {
   return (
-    <button className ="bg-blue-500 text-white w-64 px-2 py-2 mt-2 rounded-md shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"       onClick={handleConvert}
+    <button
+      className="bg-blue-500 text-white w-64 px-2 py-2 mt-2 rounded-md shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
+      onClick={handleConvert}
     >
       Convert
     </button>
@@ -389,28 +413,49 @@ type ResultProps = {
   amount: string;
   result: number;
   loading: boolean;
+  currencySymbols: Record<CurrencyCode, string>;
 };
 
-const Result = ({ fromCurrency, toCurrency, amount, result, loading }: ResultProps) => {
+const Result = ({
+  fromCurrency,
+  toCurrency,
+  amount,
+  result,
+  loading,
+  hasConverted,
+  currencySymbols,
+}: ResultProps & { hasConverted: boolean }) => {
   if (loading) {
-    return <div className="text-gray-800 text-center my-4 mb-6">Calculating...</div>;
+    return (
+      <div className="text-gray-800 text-center my-4 mb-6">Calculating...</div>
+    );
   }
 
-  // Check for null or undefined explicitly
-  if (result === null || result === undefined) {
-    return <div className="text-2xl font-semibold text-gray-800 text-center my-4 mb-6">Enter an amount to convert</div>;
+  const numericAmount = parseFloat(amount.replace(/,/g, ""));
+
+  if (
+    hasConverted &&
+    numericAmount > 0 &&
+    result !== null &&
+    result !== undefined
+  ) {
+    // Format the result to include commas
+    const formattedResult = new Intl.NumberFormat().format(result);
+    const fromSymbol = currencySymbols[fromCurrency as keyof typeof currencySymbols];
+    const toSymbol = currencySymbols[toCurrency as keyof typeof currencySymbols];
+
+
+    return (
+      <div>
+        <div className="text-2xl font-semibold text-gray-800 text-center my-5 mb-6 tracking-wider">
+          {fromSymbol}{amount} {fromCurrency} = {toSymbol}{formattedResult} {toCurrency}
+        </div>
+      </div>
+    );
+  } else {
+    return null;
   }
-
-  // Format result to a fixed number of decimal places for better readability
-  const formattedResult = result.toFixed(2);
-
-  return (
-    <div>
-      <div className="text-2xl font-semibold text-gray-800 text-center my-5 mb-6">{amount} {fromCurrency} = {formattedResult} {toCurrency}</div>
-    </div>
-  );
 };
-
 
 const Footer = () => {
   return (
